@@ -1,80 +1,64 @@
-<div class="container-fluid h-100">
-    <div class="row h-100">
-        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-            <div class="position-sticky pt-3">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'active' : ''; ?>" href="/index.php">
-                            <i class="bi bi-speedometer2 me-2"></i>
-                            Главная
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'applications.php') ? 'active' : ''; ?>" href="/applications.php">
-                            <i class="bi bi-clipboard-check me-2"></i>
-                            Заявки
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'drivers.php') ? 'active' : ''; ?>" href="/drivers.php">
-                            <i class="bi bi-person-badge me-2"></i>
-                            Водители
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'vehicles.php') ? 'active' : ''; ?>" href="/vehicles.php">
-                            <i class="bi bi-truck me-2"></i>
-                            Транспорт
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'companies.php') ? 'active' : ''; ?>" href="/companies.php">
-                            <i class="bi bi-building me-2"></i>
-                            Компании
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'tracking.php') ? 'active' : ''; ?>" href="/tracking.php">
-                            <i class="bi bi-map me-2"></i>
-                            Трекинг
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'analytics.php') ? 'active' : ''; ?>" href="/analytics.php">
-                            <i class="bi bi-graph-up me-2"></i>
-                            Аналитика
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'settings.php') ? 'active' : ''; ?>" href="/settings.php">
-                            <i class="bi bi-gear me-2"></i>
-                            Настройки
-                        </a>
-                    </li>
-                </ul>
-                
-                <!-- Блок пользователя -->
-                <div class="mt-4 p-3 border-top">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-user-circle me-2 text-primary"></i>
-                        <div>
-                            <small class="fw-bold"><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></small>
-                            <br>
-                            <small class="text-muted">
-                                <?php 
-                                if (isAdmin()) echo 'Администратор';
-                                elseif (isDispatcher()) echo 'Диспетчер';
-                                elseif (isManager()) echo 'Менеджер';
-                                else echo 'Пользователь';
-                                ?>
-                            </small>
-                        </div>
-                    </div>
+<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse shadow-sm">
+    <div class="position-sticky pt-3 h-100 d-flex flex-column">
+        <ul class="nav flex-column mb-auto">
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'active fw-bold text-primary' : ''; ?>" href="/index.php">
+                    <i class="fas fa-home me-2"></i> РАБОЧИЙ СТОЛ
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'applications.php') ? 'active fw-bold text-primary' : ''; ?>" href="/applications.php">
+                    <i class="fas fa-file-alt me-2"></i> ЗАКАЗЫ
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'drivers.php') ? 'active fw-bold text-primary' : ''; ?>" href="/drivers.php">
+                    <i class="fas fa-users me-2"></i> ВОДИТЕЛИ
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'vehicles.php') ? 'active fw-bold text-primary' : ''; ?>" href="/vehicles.php">
+                    <i class="fas fa-car me-2"></i> АВТОМОБИЛИ
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'users.php') ? 'active fw-bold text-primary' : ''; ?>" href="/users.php">
+                    <i class="fas fa-user-cog me-2"></i> ПОЛЬЗОВАТЕЛИ
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'billing.php') ? 'active fw-bold text-primary' : ''; ?>" href="/billing.php">
+                    <i class="fas fa-file-invoice-dollar me-2"></i> СЧЕТА
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'analytics.php') ? 'active fw-bold text-primary' : ''; ?>" href="/analytics.php">
+                    <i class="fas fa-chart-line me-2"></i> АНАЛИТИКА
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'tracking.php') ? 'active fw-bold text-primary' : ''; ?>" href="/tracking.php">
+                    <i class="fas fa-map-marker-alt me-2"></i> ТРЕКИНГ
+                </a>
+            </li>
+        </ul>
+
+        <!-- Calendar Widget -->
+        <div class="px-3 mb-4 mt-4">
+            <div id="calendar" class="border rounded p-2 bg-white small"></div>
+        </div>
+        
+        <!-- User Info -->
+        <div class="p-3 border-top mt-auto bg-white">
+            <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-circle fa-2x text-secondary"></i>
+                </div>
+                <div class="flex-grow-1 ms-2 overflow-hidden">
+                    <div class="text-truncate fw-bold small"><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></div>
+                    <div class="small text-muted text-uppercase" style="font-size: 0.6rem;"><?php echo htmlspecialchars($_SESSION['user_role']); ?></div>
                 </div>
             </div>
-        </nav>
-
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="row h-100">
-                <!-- Основное рабочее пространство -->
-                <div class="col-lg-8 pt-3">
+        </div>
+    </div>
+</nav>

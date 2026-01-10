@@ -1,0 +1,121 @@
+/* Modals Styles for CRM PROFTRANSFER */
+
+.modal-xl {
+    max-width: 1140px;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #007bff;
+    color: #007bff;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.route-point, .passenger-row {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.btn-remove {
+    color: #dc3545;
+    cursor: pointer;
+}
+
+.btn-remove:hover {
+    color: #bd2130;
+}
+
+.file-upload-wrapper {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #fdfdfd;
+    transition: all 0.3s;
+}
+
+.file-upload-wrapper:hover {
+    border-color: #007bff;
+    background-color: #f0f7ff;
+}
+
+.file-list {
+    margin-top: 10px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+.required-star {
+    color: #dc3545;
+}
+
+/* Dark theme compatibility */
+[data-theme="dark"] .modal-content {
+    background-color: #2c3034;
+    color: #e9ecef;
+}
+
+[data-theme="dark"] .modal-header {
+    background-color: #212529;
+    border-bottom: 1px solid #444;
+}
+
+[data-theme="dark"] .modal-title {
+    color: #fff;
+}
+
+[data-theme="dark"] .section-title {
+    color: #4dabff;
+    border-bottom-color: #4dabff;
+}
+
+[data-theme="dark"] .form-control, [data-theme="dark"] .form-select {
+    background-color: #343a40;
+    border-color: #444;
+    color: #fff;
+}
+
+[data-theme="dark"] .route-point, [data-theme="dark"] .passenger-row {
+    background-color: #343a40;
+    border-color: #444;
+}

@@ -1,61 +1,97 @@
 <?php
-// ВРЕМЕННАЯ ОТЛАДКА - УБРАТЬ ПОСЛЕ ИСПРАВЛЕНИЯ
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+/**
+ * API for Applications Management
+ */
 
-// Остальной код файла...
-header("Access-Control-Allow-Origin: *");
+require_once '../config.php';
+require_once '../includes/functions.php';
+require_once '../includes/ACL.php';
+
 header("Content-Type: application/json; charset=UTF-8");
-// ...
-?>
-<?php
 header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-
-require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Получение action из GET или POST
-$action = $_GET['action'] ?? ($_POST['action'] ?? '');
+if (!isLoggedIn()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit();
+}
 
-// Обработка разных действий
+$user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['user_role'];
+$action = $_GET['action'] ?? '';
+
+// Handle POST data
+$input = json_decode(file_get_contents("php://input"), true);
+if (!$input) $input = $_POST;
+
 switch ($action) {
     case 'getAll':
-        getAllApplications();
+        getAllApplications($pdo, $user_role, $user_id);
+        break;
+    case 'getById':
+        getApplicationById($pdo, $_GET['id'] ?? null, $user_role, $user_id);
         break;
     case 'create':
-        createApplication();
+        if (!ACL::canCreateApplication($user_role)) {
+            sendError('Permission denied', 403);
+        }
+        createApplication($pdo, $input, $user_id);
+        break;
+    case 'update':
+        updateApplication($pdo, $input, $user_role, $user_id);
         break;
     case 'assignDriver':
-        assignDriver();
+        if (!ACL::canAssignDriver($user_role)) {
+            sendError('Permission denied', 403);
+        }
+        assignDriver($pdo, $input);
         break;
     case 'assignVehicle':
-        assignVehicle();
+        if (!ACL::canAssignVehicle($user_role)) {
+            sendError('Permission denied', 403);
+        }
+        assignVehicle($pdo, $input);
+        break;
+    case 'updateStatus':
+        updateStatus($pdo, $input, $user_role, $user_id);
+        break;
+    case 'addComment':
+        addComment($pdo, $input, $user_id);
+        break;
+    case 'getComments':
+        getComments($pdo, $_GET['id'] ?? null, $user_role);
+        break;
+    case 'delete':
+        if (!ACL::canDeleteApplication($user_role)) {
+            sendError('Permission denied', 403);
+        }
+        deleteApplication($pdo, $_GET['id'] ?? $input['id'] ?? null);
         break;
     default:
-        // По умолчанию возвращаем все заявки
-        getAllApplications();
+        sendError('Invalid action');
         break;
 }
 
-// Получение всех заявок
-function getAllApplications() {
-    $user_id = $_GET['user_id'] ?? null;
-    $status = $_GET['status'] ?? null;
-    $date = $_GET['date'] ?? null;
-    
+function sendSuccess($data = [], $message = '') {
+    echo json_encode(['success' => true, 'data' => $data, 'message' => $message]);
+    exit();
+}
+
+function sendError($message, $code = 400) {
+    http_response_code($code);
+    echo json_encode(['success' => false, 'message' => $message]);
+    exit();
+}
+
+function getAllApplications($pdo, $role, $userId) {
     try {
-        $database = new Database();
-        $conn = $database->getConnection();
-        
         $query = "SELECT a.*, 
                          d.first_name as driver_first_name, 
                          d.last_name as driver_last_name,
@@ -75,324 +111,290 @@ function getAllApplications() {
         
         $params = [];
         
-        if ($status) {
-            $query .= " AND a.status = :status";
-            $params[':status'] = $status;
+        // ACL Filters
+        if ($role === ACL::ROLE_DRIVER) {
+            $query .= " AND a.driver_id = (SELECT id FROM drivers WHERE user_id = ?)";
+            $params[] = $userId;
+        } elseif ($role === ACL::ROLE_CLIENT) {
+            $query .= " AND (a.created_by = ? OR a.customer_company_id = (SELECT company_id FROM users WHERE id = ?))";
+            $params[] = $userId;
+            $params[] = $userId;
         }
-        
-        if ($date) {
-            $query .= " AND DATE(a.trip_date) = :date";
-            $params[':date'] = $date;
+
+        // Additional Filters from GET
+        if (!empty($_GET['status'])) {
+            $query .= " AND a.status = ?";
+            $params[] = $_GET['status'];
         }
-        
+        if (!empty($_GET['date'])) {
+            $query .= " AND DATE(a.trip_date) = ?";
+            $params[] = $_GET['date'];
+        }
+
         $query .= " ORDER BY a.trip_date DESC";
-        
-        $stmt = $conn->prepare($query);
+        $stmt = $pdo->prepare($query);
         $stmt->execute($params);
-        
-        $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Получаем маршруты для каждой заявки
+        $applications = $stmt->fetchAll();
+
+        // Get routes for each
         foreach ($applications as &$app) {
-            $routeQuery = "SELECT * FROM application_routes WHERE application_id = :app_id ORDER BY point_order";
-            $routeStmt = $conn->prepare($routeQuery);
-            $routeStmt->execute([':app_id' => $app['id']]);
-            $app['routes'] = $routeStmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            $passengerQuery = "SELECT * FROM application_passengers WHERE application_id = :app_id";
-            $passengerStmt = $conn->prepare($passengerQuery);
-            $passengerStmt->execute([':app_id' => $app['id']]);
-            $app['passengers'] = $passengerStmt->fetchAll(PDO::FETCH_ASSOC);
+            $stmtR = $pdo->prepare("SELECT * FROM application_routes WHERE application_id = ? ORDER BY point_order");
+            $stmtR->execute([$app['id']]);
+            $app['routes'] = $stmtR->fetchAll();
         }
-        
-        http_response_code(200);
-        echo json_encode([
-            'success' => true,
-            'data' => $applications
-        ]);
-        
-    } catch (PDOException $e) {
-        error_log("Applications fetch error: " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Ошибка получения заявок'
-        ]);
+
+        sendSuccess($applications);
+    } catch (Exception $e) {
+        sendError($e->getMessage(), 500);
     }
 }
 
-// Создание новой заявки
-function createApplication() {
-    $data = json_decode(file_get_contents("php://input"), true);
-    
-    if (empty($data)) {
-        $data = $_POST;
-    }
-    
+function getApplicationById($pdo, $id, $role, $userId) {
+    if (!$id) sendError('ID missing');
     try {
-        $database = new Database();
-        $conn = $database->getConnection();
-        $conn->beginTransaction();
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
+        $stmt->execute([$id]);
+        $app = $stmt->fetch();
         
-        // Генерируем номер заявки
-        $appNumber = 'A' . date('Ymd') . sprintf('%04d', rand(1000, 9999));
-        
-        // Форматируем дату и время
-        $tripDateTime = $data['trip_date'] ?? '';
-        if ($tripDateTime) {
-            $tripDateTime = date('Y-m-d H:i:s', strtotime($tripDateTime));
-        }
-        
-        // Создаем основную заявку
-        $query = "INSERT INTO applications (
-                    application_number, status, city, country, trip_date, service_type, tariff,
-                    customer_name, customer_phone, order_amount, created_by,
-                    flight_number, manager_comment, notes
-                  ) VALUES (
-                    :app_number, :status, :city, :country, :trip_date, :service_type, :tariff,
-                    :customer_name, :customer_phone, :order_amount, :created_by,
-                    :flight_number, :manager_comment, :notes
-                  )";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->execute([
-            ':app_number' => $appNumber,
-            ':status' => $data['status'] ?? 'new',
-            ':city' => $data['city'] ?? 'Москва',
-            ':country' => $data['country'] ?? 'ru',
-            ':trip_date' => $tripDateTime,
-            ':service_type' => $data['service_type'] ?? 'transfer',
-            ':tariff' => $data['vehicle_class'] ?? 'comfort',
-            ':customer_name' => $data['customer_name'] ?? '',
-            ':customer_phone' => $data['customer_phone'] ?? '',
-            ':order_amount' => $data['order_amount'] ?? 0,
-            ':created_by' => $data['created_by'] ?? 1,
-            ':flight_number' => $data['flight_number'] ?? null,
-            ':manager_comment' => $data['driver_comment'] ?? $data['manager_comment'] ?? null,
-            ':notes' => $data['notes'] ?? null
-        ]);
-        
-        $applicationId = $conn->lastInsertId();
-        
-        // Сохраняем маршруты
-        if (!empty($data['routes'])) {
-            // Если routes - массив адресов
-            if (is_array($data['routes'])) {
-                foreach ($data['routes'] as $index => $address) {
-                    if (!empty(trim($address))) {
-                        $routeQuery = "INSERT INTO application_routes (application_id, point_order, city, country, address) 
-                                      VALUES (:app_id, :order, :city, :country, :address)";
-                        $routeStmt = $conn->prepare($routeQuery);
-                        $routeStmt->execute([
-                            ':app_id' => $applicationId,
-                            ':order' => $index,
-                            ':city' => $data['city'] ?? 'Москва',
-                            ':country' => $data['country'] ?? 'ru',
-                            ':address' => trim($address)
-                        ]);
-                    }
+        if (!$app) sendError('Application not found', 404);
+
+        // ACL Check
+        if ($role === ACL::ROLE_DRIVER) {
+            $stmtD = $pdo->prepare("SELECT id FROM drivers WHERE user_id = ?");
+            $stmtD->execute([$userId]);
+            $driver = $stmtD->fetch();
+            if (!$driver || $app['driver_id'] != $driver['id']) {
+                sendError('Access denied', 403);
+            }
+        } elseif ($role === ACL::ROLE_CLIENT) {
+            // Check if it's their order
+            if ($app['created_by'] != $userId) {
+                $stmtU = $pdo->prepare("SELECT company_id FROM users WHERE id = ?");
+                $stmtU->execute([$userId]);
+                $user = $stmtU->fetch();
+                if ($app['customer_company_id'] != $user['company_id']) {
+                    sendError('Access denied', 403);
                 }
             }
+        }
+
+        // Load routes and passengers
+        $stmtR = $pdo->prepare("SELECT * FROM application_routes WHERE application_id = ? ORDER BY point_order");
+        $stmtR->execute([$id]);
+        $app['routes'] = $stmtR->fetchAll();
+
+        $stmtP = $pdo->prepare("SELECT * FROM application_passengers WHERE application_id = ?");
+        $stmtP->execute([$id]);
+        $app['passengers'] = $stmtP->fetchAll();
+
+        sendSuccess($app);
+    } catch (Exception $e) {
+        sendError($e->getMessage(), 500);
+    }
+}
+
+function createApplication($pdo, $data, $userId) {
+    try {
+        $pdo->beginTransaction();
+
+        $appNumber = 'A' . date('Ymd') . strtoupper(substr(uniqid(), -4));
+        
+        $sql = "INSERT INTO applications (
+            application_number, status, city, country, trip_date, service_type, tariff,
+            cancellation_hours, customer_name, customer_phone, additional_services_amount,
+            flight_number, sign_text, notes, manager_comment, internal_comment,
+            customer_company_id, executor_company_id, order_amount, executor_amount,
+            created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            $appNumber,
+            $data['status'] ?? 'new',
+            $data['city'] ?? '',
+            $data['country'] ?? 'ru',
+            $data['trip_date'],
+            $data['service_type'] ?? 'other',
+            $data['tariff'] ?? 'standard',
+            $data['cancellation_hours'] ?? 0,
+            $data['customer_name'] ?? '',
+            $data['customer_phone'] ?? '',
+            $data['additional_services_amount'] ?? 0,
+            $data['flight_number'] ?? '',
+            $data['sign_text'] ?? '',
+            $data['notes'] ?? '',
+            $data['manager_comment'] ?? '',
+            $data['internal_comment'] ?? '',
+            !empty($data['customer_company_id']) ? $data['customer_company_id'] : null,
+            !empty($data['executor_company_id']) ? $data['executor_company_id'] : null,
+            $data['order_amount'] ?? 0,
+            $data['executor_amount'] ?? 0,
+            $userId
+        ]);
+
+        $appId = $pdo->lastInsertId();
+
+        // Routes
+        if (!empty($data['routes']) && is_array($data['routes'])) {
+            $stmtR = $pdo->prepare("INSERT INTO application_routes (application_id, point_order, address) VALUES (?, ?, ?)");
+            foreach ($data['routes'] as $i => $addr) {
+                if (trim($addr)) $stmtR->execute([$appId, $i, trim($addr)]);
+            }
+        }
+
+        // Passengers
+        if (!empty($data['passengers']) && is_array($data['passengers'])) {
+            $stmtP = $pdo->prepare("INSERT INTO application_passengers (application_id, name, phone) VALUES (?, ?, ?)");
+            foreach ($data['passengers'] as $p) {
+                if (!empty($p['name'])) $stmtP->execute([$appId, $p['name'], $p['phone'] ?? '']);
+            }
+        }
+
+        logAction("Создан заказ $appNumber", $userId);
+        $pdo->commit();
+        sendSuccess(['id' => $appId, 'number' => $appNumber], 'Заказ успешно создан');
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        sendError($e->getMessage(), 500);
+    }
+}
+
+function updateApplication($pdo, $data, $role, $userId) {
+    $id = $data['app_id'] ?? null;
+    if (!$id) sendError('ID missing');
+    
+    try {
+        $stmt = $pdo->prepare("SELECT status, application_number FROM applications WHERE id = ?");
+        $stmt->execute([$id]);
+        $app = $stmt->fetch();
+        if (!$app) sendError('Not found');
+
+        if (!ACL::canEditApplication($role, $app['status'])) {
+            sendError('Permission denied', 403);
+        }
+
+        $pdo->beginTransaction();
+
+        $sql = "UPDATE applications SET 
+            city = ?, country = ?, trip_date = ?, service_type = ?, tariff = ?,
+            cancellation_hours = ?, customer_name = ?, customer_phone = ?, additional_services_amount = ?,
+            flight_number = ?, sign_text = ?, notes = ?, manager_comment = ?, internal_comment = ?,
+            customer_company_id = ?, executor_company_id = ?, order_amount = ?, executor_amount = ?,
+            status = ?
+            WHERE id = ?";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            $data['city'], $data['country'], $data['trip_date'], $data['service_type'], $data['tariff'],
+            $data['cancellation_hours'], $data['customer_name'], $data['customer_phone'], $data['additional_services_amount'],
+            $data['flight_number'], $data['sign_text'], $data['notes'], $data['manager_comment'], $data['internal_comment'],
+            !empty($data['customer_company_id']) ? $data['customer_company_id'] : null,
+            !empty($data['executor_company_id']) ? $data['executor_company_id'] : null,
+            $data['order_amount'], $data['executor_amount'],
+            $data['status'],
+            $id
+        ]);
+
+        // Refresh routes
+        $pdo->prepare("DELETE FROM application_routes WHERE application_id = ?")->execute([$id]);
+        if (!empty($data['routes']) && is_array($data['routes'])) {
+            $stmtR = $pdo->prepare("INSERT INTO application_routes (application_id, point_order, address) VALUES (?, ?, ?)");
+            foreach ($data['routes'] as $i => $addr) {
+                if (trim($addr)) $stmtR->execute([$id, $i, trim($addr)]);
+            }
+        }
+
+        // Refresh passengers
+        $pdo->prepare("DELETE FROM application_passengers WHERE application_id = ?")->execute([$id]);
+        if (!empty($data['passengers']) && is_array($data['passengers'])) {
+            $stmtP = $pdo->prepare("INSERT INTO application_passengers (application_id, name, phone) VALUES (?, ?, ?)");
+            foreach ($data['passengers'] as $p) {
+                if (!empty($p['name'])) $stmtP->execute([$id, $p['name'], $p['phone'] ?? '']);
+            }
+        }
+
+        logAction("Обновлен заказ {$app['application_number']}", $userId);
+        $pdo->commit();
+        sendSuccess([], 'Заказ успешно обновлен');
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        sendError($e->getMessage(), 500);
+    }
+}
+
+function assignDriver($pdo, $data) {
+    $appId = $data['application_id'];
+    $driverId = $data['driver_id'];
+    try {
+        $stmt = $pdo->prepare("UPDATE applications SET driver_id = ?, status = IF(status='new', 'confirmed', status) WHERE id = ?");
+        $stmt->execute([$driverId, $appId]);
+        logAction("Назначен водитель $driverId на заказ $appId");
+        sendSuccess([], 'Водитель назначен');
+    } catch (Exception $e) {
+        sendError($e->getMessage());
+    }
+}
+
+function assignVehicle($pdo, $data) {
+    $appId = $data['application_id'];
+    $vehicleId = $data['vehicle_id'];
+    try {
+        $stmt = $pdo->prepare("UPDATE applications SET vehicle_id = ? WHERE id = ?");
+        $stmt->execute([$vehicleId, $appId]);
+        logAction("Назначена машина $vehicleId на заказ $appId");
+        sendSuccess([], 'Машина назначена');
+    } catch (Exception $e) {
+        sendError($e->getMessage());
+    }
+}
+
+function updateStatus($pdo, $data, $role, $userId) {
+    $appId = $data['application_id'];
+    $status = $data['status'];
+    try {
+        // ACL check
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch();
+        
+        // Find driver_user_id for ACL check
+        if ($app['driver_id']) {
+            $stmtD = $pdo->prepare("SELECT user_id FROM drivers WHERE id = ?");
+            $stmtD->execute([$app['driver_id']]);
+            $d = $stmtD->fetch();
+            $app['driver_user_id'] = $d['user_id'] ?? null;
         } else {
-            // Сохраняем стандартные точки маршрута
-            $routeFrom = $data['route_from'] ?? ($data['routes'][0] ?? '');
-            $routeTo = $data['route_to'] ?? ($data['routes'][1] ?? '');
-            
-            if (!empty($routeFrom)) {
-                $routeQuery = "INSERT INTO application_routes (application_id, point_order, city, country, address) 
-                              VALUES (:app_id, 0, :city, :country, :address)";
-                $routeStmt = $conn->prepare($routeQuery);
-                $routeStmt->execute([
-                    ':app_id' => $applicationId,
-                    ':city' => $data['city'] ?? 'Москва',
-                    ':country' => $data['country'] ?? 'ru',
-                    ':address' => trim($routeFrom)
-                ]);
-            }
-            
-            if (!empty($routeTo)) {
-                $routeQuery = "INSERT INTO application_routes (application_id, point_order, city, country, address) 
-                              VALUES (:app_id, 1, :city, :country, :address)";
-                $routeStmt = $conn->prepare($routeQuery);
-                $routeStmt->execute([
-                    ':app_id' => $applicationId,
-                    ':city' => $data['city'] ?? 'Москва',
-                    ':country' => $data['country'] ?? 'ru',
-                    ':address' => trim($routeTo)
-                ]);
-            }
+            $app['driver_user_id'] = null;
         }
-        
-        // Сохраняем пассажиров
-        if (!empty($data['passengers'])) {
-            foreach ($data['passengers'] as $passenger) {
-                if (!empty(trim($passenger['name']))) {
-                    $passengerQuery = "INSERT INTO application_passengers (application_id, name, phone) 
-                                      VALUES (:app_id, :name, :phone)";
-                    $passengerStmt = $conn->prepare($passengerQuery);
-                    $passengerStmt->execute([
-                        ':app_id' => $applicationId,
-                        ':name' => trim($passenger['name']),
-                        ':phone' => $passenger['phone'] ?? null
-                    ]);
-                }
-            }
-        } else if (!empty($data['customer_name'])) {
-            // Добавляем заказчика как пассажира
-            $passengerQuery = "INSERT INTO application_passengers (application_id, name, phone) 
-                              VALUES (:app_id, :name, :phone)";
-            $passengerStmt = $conn->prepare($passengerQuery);
-            $passengerStmt->execute([
-                ':app_id' => $applicationId,
-                ':name' => $data['customer_name'],
-                ':phone' => $data['customer_phone'] ?? null
-            ]);
+
+        if (!ACL::canUpdateStatus($role, $app)) {
+            sendError('Permission denied', 403);
         }
-        
-        $conn->commit();
-        
-        // Логируем действие
-        $logQuery = "INSERT INTO activity_log (user_id, action, ip_address) 
-                    VALUES (:user_id, :action, :ip)";
-        $logStmt = $conn->prepare($logQuery);
-        $logStmt->execute([
-            ':user_id' => $data['created_by'] ?? 1,
-            ':action' => "Создана заявка {$appNumber}",
-            ':ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
-        ]);
-        
-        http_response_code(201);
-        echo json_encode([
-            'success' => true,
-            'message' => 'Заявка успешно создана',
-            'application_id' => $applicationId,
-            'application_number' => $appNumber
-        ]);
-        
-    } catch (PDOException $e) {
-        if (isset($conn)) {
-            $conn->rollBack();
-        }
-        error_log("Application creation error: " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Ошибка создания заявки: ' . $e->getMessage()
-        ]);
+
+        $stmtU = $pdo->prepare("UPDATE applications SET status = ? WHERE id = ?");
+        $stmtU->execute([$status, $appId]);
+        logAction("Статус заказа $appId изменен на $status", $userId);
+        sendSuccess([], 'Статус обновлен');
+    } catch (Exception $e) {
+        sendError($e->getMessage());
     }
 }
 
-// Назначение водителя
-function assignDriver() {
-    $data = json_decode(file_get_contents("php://input"), true);
-    
-    if (empty($data)) {
-        $data = $_POST;
-    }
-    
-    $applicationId = $data['application_id'] ?? null;
-    $driverId = $data['driver_id'] ?? null;
-    
-    if (!$applicationId || !$driverId) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Не указаны ID заявки или водителя'
-        ]);
-        return;
-    }
-    
+function deleteApplication($pdo, $id) {
+    if (!$id) sendError('ID missing');
     try {
-        $database = new Database();
-        $conn = $database->getConnection();
-        
-        $query = "UPDATE applications SET driver_id = :driver_id, status = 'confirmed' WHERE id = :app_id";
-        $stmt = $conn->prepare($query);
-        $stmt->execute([
-            ':driver_id' => $driverId,
-            ':app_id' => $applicationId
-        ]);
-        
-        // Логируем действие
-        $logQuery = "INSERT INTO activity_log (user_id, action, ip_address) 
-                    VALUES (:user_id, :action, :ip)";
-        $logStmt = $conn->prepare($logQuery);
-        $logStmt->execute([
-            ':user_id' => 1, // Временно
-            ':action' => "Назначен водитель #{$driverId} на заявку #{$applicationId}",
-            ':ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
-        ]);
-        
-        http_response_code(200);
-        echo json_encode([
-            'success' => true,
-            'message' => 'Водитель успешно назначен'
-        ]);
-        
-    } catch (PDOException $e) {
-        error_log("Assign driver error: " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Ошибка назначения водителя: ' . $e->getMessage()
-        ]);
+        $stmt = $pdo->prepare("DELETE FROM applications WHERE id = ?");
+        $stmt->execute([$id]);
+        sendSuccess([], 'Заказ удален');
+    } catch (Exception $e) {
+        sendError($e->getMessage());
     }
 }
 
-// Назначение автомобиля
-function assignVehicle() {
-    $data = json_decode(file_get_contents("php://input"), true);
-    
-    if (empty($data)) {
-        $data = $_POST;
-    }
-    
-    $applicationId = $data['application_id'] ?? null;
-    $vehicleId = $data['vehicle_id'] ?? null;
-    
-    if (!$applicationId || !$vehicleId) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Не указаны ID заявки или автомобиля'
-        ]);
-        return;
-    }
-    
-    try {
-        $database = new Database();
-        $conn = $database->getConnection();
-        
-        $query = "UPDATE applications SET vehicle_id = :vehicle_id WHERE id = :app_id";
-        $stmt = $conn->prepare($query);
-        $stmt->execute([
-            ':vehicle_id' => $vehicleId,
-            ':app_id' => $applicationId
-        ]);
-        
-        // Логируем действие
-        $logQuery = "INSERT INTO activity_log (user_id, action, ip_address) 
-                    VALUES (:user_id, :action, :ip)";
-        $logStmt = $conn->prepare($logQuery);
-        $logStmt->execute([
-            ':user_id' => 1, // Временно
-            ':action' => "Назначен автомобиль #{$vehicleId} на заявку #{$applicationId}",
-            ':ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
-        ]);
-        
-        http_response_code(200);
-        echo json_encode([
-            'success' => true,
-            'message' => 'Автомобиль успешно назначен'
-        ]);
-        
-    } catch (PDOException $e) {
-        error_log("Assign vehicle error: " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Ошибка назначения автомобиля: ' . $e->getMessage()
-        ]);
-    }
+function addComment($pdo, $data, $userId) {
+    // Implement comment adding if needed
 }
-?>
+
+function getComments($pdo, $id, $role) {
+    // Implement comment fetching if needed
+}
