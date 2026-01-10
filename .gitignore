@@ -1,0 +1,28 @@
+# PHP
+*.log
+vendor/
+composer.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/
+files/
+
+# Config (credentials)
+# protected/ - Uncomment if you want to ignore protected folder entirely
+# protected/config.php - Uncomment to ignore config file
+
+# Temporary files
+tmp/
+temp/
+*.tmp
