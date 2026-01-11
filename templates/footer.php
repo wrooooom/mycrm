@@ -1,154 +1,135 @@
-                </div> <!-- Закрываем col-lg-8 -->
-
-                <!-- Панель с календарем и историей (займет 1/3 ширины) -->
-                <div class="col-lg-4 border-start pt-3">
-                    <div class="mb-4">
-                        <h5>Календарь</h5>
-                        <div id="calendar"></div>
-                    </div>                </div>
-
-                <!-- Боковая панель с календарем и историей -->
-                <div class="col-lg-4 border-start pt-3">
-                    <div class="mb-4">
-                        <h5><i class="bi bi-calendar me-2"></i>Календарь</h5>
-                        <div id="calendar" class="border rounded p-3 bg-light"></div>
-                    </div>
-                    <div>
-                        <h5><i class="bi bi-clock-history me-2"></i>История действий</h5>
-                        <div class="list-group list-group-flush small">
-                            <?php
-                            // Функция для получения последних действий
-                            function getRecentActivity($pdo, $limit = 5) {
-                                try {
-                                    $stmt = $pdo->prepare("
-                                        SELECT al.*, u.username 
-                                        FROM activity_log al 
-                                        LEFT JOIN users u ON al.user_id = u.id 
-                                        ORDER BY al.created_at DESC 
-                                        LIMIT ?
-                                    ");
-                                    $stmt->execute([$limit]);
-                                    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-                                } catch(Exception $e) {
-                                    return [];
-                                }
-                            }
-                            
-                            $history = getRecentActivity($pdo);
-                            if ($history) {
-                                foreach ($history as $item) {
-                                    echo '<div class="list-group-item list-group-item-action">';
-                                    echo '<div class="d-flex w-100 justify-content-between">';
-                                    echo '<h6 class="mb-1">' . htmlspecialchars($item['action']) . '</h6>';
-                                    echo '<small>' . date('H:i', strtotime($item['created_at'])) . '</small>';
-                                    echo '</div>';
-                                    echo '<p class="mb-1">' . ($item['username'] ? 'Пользователь: ' . htmlspecialchars($item['username']) : 'Система') . '</p>';
-                                    echo '</div>';
-                                }
-                            } else {
-                                echo '<div class="list-group-item">';
-                                echo '<p class="text-muted mb-0">Нет недавних действий</p>';
-                                echo '</div>';
-                            }
-                            ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+                <!-- Основной контент страницы размещается здесь -->
+            </main>
+        </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const today = new Date();
-        const month = today.toLocaleString('ru-RU', { month: 'long' });
-        const year = today.getFullYear();
-        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    <!-- Футер -->
+    <footer class="footer mt-auto py-3 bg-light border-top">
+        <div class="container-fluid">
+            <span class="text-muted">
+                © 2025 CRM.PROFTRANSFER - Система управления трансферными услугами
+            </span>
+        </div>
+    </footer>
 
-        let calendarHTML = `<h6 class="text-center text-primary">${month} ${year}</h6>`;
-        calendarHTML += `<div class="d-grid gap-1" style="grid-template-columns: repeat(7, 1fr);">`;
-        
-        const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-        weekdays.forEach(day => {
-            calendarHTML += `<small class="text-center text-muted fw-bold">${day}</small>`;
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Дополнительные скрипты для конкретных страниц -->
+    <?php if (isset($additional_js)) echo $additional_js; ?>
+    
+    <!-- Общие скрипты -->
+    <script>
+        // Автоматическое скрытие уведомлений
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
         });
 
-        for (let i = 1; i <= daysInMonth; i++) {
-            const isToday = i === today.getDate();
-            const classToday = isToday ? 'bg-primary text-white rounded' : '';
-            calendarHTML += `<span class="text-center p-1 ${classToday}">${i}</span>`;
+        // Подтверждение действий
+        function confirmAction(message, callback) {
+            if (confirm(message)) {
+                callback();
+            }
         }
 
-        calendarHTML += `</div>`;
-        document.getElementById('calendar').innerHTML = calendarHTML;
-    });
-</script>
+        // AJAX запросы с обработкой ошибок
+        function ajaxRequest(url, data, callback) {
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, 'success');
+                        if (callback) callback(response);
+                    } else {
+                        showAlert('Ошибка: ' + response.message, 'danger');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showAlert('Ошибка связи с сервером', 'danger');
+                    console.error('AJAX Error:', error);
+                }
+            });
+        }
 
-<!-- Дополнительные скрипты для конкретных страниц -->
-<?php if (isset($additional_scripts)) echo $additional_scripts; ?>
+        // Показ уведомлений
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            // Удаляем старые уведомления
+            $('.alert').remove();
+            
+            // Добавляем новое уведомление
+            $('.container-fluid').prepend(alertHtml);
+            
+            // Прокручиваем к верху
+            $('html, body').animate({ scrollTop: 0 }, 'fast');
+        }
 
-</body>
-</html>
-                    <div>
-                        <h5>История действий</h5>
-                        <div class="list-group list-group-flush small">
-                            <?php
-                            // Пример вывода истории. Позже мы это оживим.
-                            $history = getRecentActivity($pdo); // Эту функцию нужно будет создать в functions.php
-                            if ($history) {
-                                foreach ($history as $item) {
-                                    echo '<div class="list-group-item list-group-item-action">';
-                                    echo '<div class="d-flex w-100 justify-content-between">';
-                                    echo '<h6 class="mb-1">' . htmlspecialchars($item['action']) . '</h6>';
-                                    echo '<small>' . $item['time_ago'] . '</small>';
-                                    echo '</div>';
-                                    echo '<p class="mb-1">' . htmlspecialchars($item['details']) . '</p>';
-                                    echo '</div>';
-                                }
-                            } else {
-                                echo '<p class="text-muted">Нет recent activity.</p>';
-                            }
-                            ?>
-                        </div>
-                    </div>
-                </div> <!-- Закрываем col-lg-4 -->
-            </div> <!-- Закрываем row -->
-        </main> <!-- Закрываем main -->
-    </div> <!-- Закрываем row -->
-</div> <!-- Закрываем container-fluid -->
+        // Подтверждение удаления
+        function confirmDelete(itemName, callback) {
+            if (confirm(`Вы уверены, что хотите удалить ${itemName}?`)) {
+                callback();
+            }
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/js/script.js"></script>
-<!-- Скрипт для календаря -->
-<script>
-    // Простой календарь. Позже можно подключить полноценный, например, FullCalendar.
-    document.addEventListener('DOMContentLoaded', function() {
-        const today = new Date();
-        const month = today.toLocaleString('ru-RU', { month: 'long' });
-        const year = today.getFullYear();
-        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        // Форматирование даты
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
 
-        let calendarHTML = `<h6 class="text-center">${month} ${year}</h6>`;
-        calendarHTML += `<div class="d-grid gap-1" style="grid-template-columns: repeat(7, 1fr);">`;
-        
-        // Добавляем дни недели
-        const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-        weekdays.forEach(day => {
-            calendarHTML += `<small class="text-center text-muted">${day}</small>`;
+        // Форматирование суммы
+        function formatAmount(amount) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Валидация формы
+        function validateForm(formId) {
+            const form = document.getElementById(formId);
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+
+            requiredFields.forEach(function(field) {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            return isValid;
+        }
+
+        // Очистка валидации при вводе
+        $(document).on('input', '.is-invalid', function() {
+            $(this).removeClass('is-invalid');
         });
-
-        // Добавляем числа
-        for (let i = 1; i <= daysInMonth; i++) {
-            const isToday = i === today.getDate();
-            const classToday = isToday ? 'bg-primary text-white rounded' : '';
-            calendarHTML += `<span class="text-center p-1 ${classToday}">${i}</span>`;
-        }
-
-        calendarHTML += `</div>`;
-        document.getElementById('calendar').innerHTML = calendarHTML;
-    });
-</script>
+    </script>
 </body>
 </html>
