@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once '../config/database.php';
 require_once '../auth.php';
+require_once '../includes/notifications.php';
 
 // Проверяем авторизацию для API
 if (!isLoggedIn()) {
@@ -482,6 +483,17 @@ function updateApplicationStatus() {
             ':app_id' => $applicationId
         ]);
         
+        // Отправляем уведомления диспетчерам
+        if (!empty($application['application_number'])) {
+            notifyDispatchersStatusChange(
+                $conn,
+                $application['application_number'],
+                $application['status'],
+                $newStatus,
+                $application['executor_company_id'] ?? null
+            );
+        }
+
         // Логируем действие
         logAction("update_application_status", $userContext['user_id'], 
                  "Изменен статус заявки {$application['application_number']} на {$newStatus}");
@@ -554,6 +566,11 @@ function assignDriver() {
             return;
         }
         
+        // Получаем номер заявки для уведомления
+        $appInfoStmt = $conn->prepare("SELECT application_number FROM applications WHERE id = :app_id");
+        $appInfoStmt->execute([':app_id' => $applicationId]);
+        $appInfo = $appInfoStmt->fetch(PDO::FETCH_ASSOC);
+        
         // Назначаем водителя и обновляем статус
         $query = "UPDATE applications SET driver_id = :driver_id, status = 'assigned', updated_at = CURRENT_TIMESTAMP WHERE id = :app_id";
         $stmt = $conn->prepare($query);
@@ -561,6 +578,11 @@ function assignDriver() {
             ':driver_id' => $driverId,
             ':app_id' => $applicationId
         ]);
+        
+        // Отправляем уведомление водителю
+        if (!empty($appInfo['application_number'])) {
+            notifyDriverAssignment($conn, $driverId, $appInfo['application_number']);
+        }
         
         // Логируем действие
         logAction("assign_driver", $userContext['user_id'], 
