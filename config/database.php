@@ -92,4 +92,7 @@ function getTableRecordCounts($pdo) {
     
     return $counts;
 }
+
+// Include Database class
+require_once __DIR__ . '/Database.php';
 ?>
