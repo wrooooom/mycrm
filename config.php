@@ -24,7 +24,7 @@ try {
             password_hash VARCHAR(255) NOT NULL,
             password VARCHAR(255) NOT NULL,
             full_name VARCHAR(255) NOT NULL,
-            role ENUM('admin','dispatcher','manager') DEFAULT 'dispatcher',
+            role ENUM('admin','manager','driver','client') DEFAULT 'client',
             is_active TINYINT(1) DEFAULT 1,
             last_login TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -858,7 +858,7 @@ if (empty($drivers)) {
                         <span><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></span>
                         <?php if (isAdmin()): ?>
                             <span class="role-badge"><i class="fas fa-crown"></i> Администратор</span>
-                        <?php elseif (isDispatcher()): ?>
+                        <?php elseif (isManager()): ?>
                             <span class="role-badge"><i class="fas fa-headset"></i> Диспетчер</span>
                         <?php elseif (isManager()): ?>
                             <span class="role-badge"><i class="fas fa-user-tie"></i> Менеджер</span>

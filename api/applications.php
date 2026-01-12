@@ -54,7 +54,7 @@ function getApplicationsByRole($userContext) {
     switch ($role) {
         case 'admin':
             return "1=1"; // Админ видит все
-        case 'dispatcher':
+        case 'client':
         case 'manager':
             // Видит заказы своей компании или заказы без назначенной компании
             return "(a.executor_company_id = :company_id OR a.executor_company_id IS NULL)";
@@ -129,7 +129,7 @@ function getAllApplications() {
         $params = [];
         
         // Добавляем параметры для ACL
-        if ($userContext['role'] === 'dispatcher' || $userContext['role'] === 'manager') {
+        if ($userContext['role'] === 'client' || $userContext['role'] === 'manager') {
             $params[':company_id'] = $userContext['company_id'];
         } elseif ($userContext['role'] === 'driver') {
             $params[':user_id'] = $userContext['user_id'];
@@ -296,7 +296,7 @@ function createApplication() {
         $deliveryTime = !empty($data['delivery_time']) ? date('Y-m-d H:i:s', strtotime($data['delivery_time'])) : null;
         
         // Проверяем права на создание заказов
-        if (!in_array($userContext['role'], ['admin', 'dispatcher', 'manager'])) {
+        if (!in_array($userContext['role'], ['admin', 'client', 'manager'])) {
             throw new Exception('Недостаточно прав для создания заявок');
         }
         
@@ -460,7 +460,7 @@ function updateApplicationStatus() {
         $canUpdate = false;
         if ($userContext['role'] === 'admin') {
             $canUpdate = true;
-        } elseif (in_array($userContext['role'], ['dispatcher', 'manager'])) {
+        } elseif (in_array($userContext['role'], ['client', 'manager'])) {
             $canUpdate = ($application['executor_company_id'] == $userContext['company_id']);
         } elseif ($userContext['role'] === 'driver') {
             $canUpdate = ($application['driver_user_id'] == $userContext['user_id']);
@@ -538,7 +538,7 @@ function assignDriver() {
     }
     
     // Проверяем права на назначение водителей
-    if (!in_array($userContext['role'], ['admin', 'dispatcher', 'manager'])) {
+    if (!in_array($userContext['role'], ['admin', 'client', 'manager'])) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
@@ -628,7 +628,7 @@ function assignVehicle() {
     }
     
     // Проверяем права на назначение автомобилей
-    if (!in_array($userContext['role'], ['admin', 'dispatcher', 'manager'])) {
+    if (!in_array($userContext['role'], ['admin', 'client', 'manager'])) {
         http_response_code(403);
         echo json_encode([
             'success' => false,

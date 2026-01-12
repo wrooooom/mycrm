@@ -20,9 +20,9 @@ if (!function_exists('isAdmin')) {
     }
 }
 
-if (!function_exists('isDispatcher')) {
-    function isDispatcher() {
-        return isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'dispatcher';
+if (!function_exists('isClient')) {
+    function isClient() {
+        return isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client';
     }
 }
 
@@ -74,19 +74,6 @@ if (!function_exists('requireAdmin')) {
     }
 }
 
-if (!function_exists('requireDispatcher')) {
-    function requireDispatcher() {
-        requireLogin();
-        if (!isAdmin() && !isDispatcher()) {
-            if (function_exists('logAction')) {
-                logAction('attempt_access_dispatcher_without_permission', $_SESSION['user_id'] ?? null);
-            }
-            header("Location: index.php");
-            exit();
-        }
-    }
-}
-
 if (!function_exists('requireManager')) {
     function requireManager() {
         requireLogin();
@@ -104,9 +91,9 @@ if (!function_exists('getRoleName')) {
     function getRoleName($role) {
         $roles = [
             'admin' => 'Администратор',
-            'dispatcher' => 'Диспетчер',
             'manager' => 'Менеджер',
-            'driver' => 'Водитель'
+            'driver' => 'Водитель',
+            'client' => 'Клиент'
         ];
         return $roles[$role] ?? $role;
     }
@@ -118,9 +105,9 @@ if (!function_exists('hasAccess')) {
 
         $accessMatrix = [
             'admin' => ['applications', 'drivers', 'vehicles', 'companies', 'analytics', 'settings', 'reports'],
-            'dispatcher' => ['applications', 'drivers', 'vehicles', 'companies', 'reports'],
-            'manager' => ['applications', 'drivers', 'vehicles', 'reports'],
-            'driver' => ['applications']
+            'manager' => ['applications', 'drivers', 'vehicles', 'companies'],
+            'driver' => ['applications'],
+            'client' => ['applications']
         ];
 
         return in_array($module, $accessMatrix[$userRole] ?? []);

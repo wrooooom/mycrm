@@ -9,7 +9,7 @@ requireLogin();
 $page_title = 'Отчёты';
 
 // Проверяем права доступа
-if (!in_array($_SESSION['user_role'], ['admin', 'manager', 'dispatcher'])) {
+if (!in_array($_SESSION['user_role'], ['admin', 'manager', 'client'])) {
     header("Location: index.php");
     exit();
 }
