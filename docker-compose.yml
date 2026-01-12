@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # PHP Apache Web Server
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm_web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html
+      - ./logs:/var/www/html/logs
+      - ./backups:/var/www/html/backups
+      - ./uploads:/var/www/html/uploads
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME:-crm_db}
+      - DB_USER=${DB_USER:-crm_user}
+      - DB_PASSWORD=${DB_PASSWORD:-secure_password}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+    depends_on:
+      - db
+    networks:
+      - crm_network
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: crm_db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+      - MYSQL_DATABASE=${DB_NAME:-crm_db}
+      - MYSQL_USER=${DB_USER:-crm_user}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-secure_password}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - crm_network
+
+  # PHPMyAdmin (optional, for development)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: crm_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - PMA_USER=${DB_USER:-crm_user}
+      - PMA_PASSWORD=${DB_PASSWORD:-secure_password}
+    depends_on:
+      - db
+    networks:
+      - crm_network
+    profiles:
+      - dev
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  crm_network:
+    driver: bridge

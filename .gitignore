@@ -1,51 +1,107 @@
-# PHP
-*.php~
-*.phtml
-*.php_old
+# ================================
+# CRM.PROFTRANSFER - .gitignore
+# ================================
 
-# Composer
-vendor/
-composer.lock
-
-# Environment files
+# Environment Configuration
 .env
 .env.local
 .env.*.local
+.env.backup
+config/database.php
 
-# Caches
-/cache/
-/tmp/
-*.cache
-.cache/
-
-# Uploads
-/uploads/
-/public/uploads/
-/storage/uploads/
-
-# IDE and Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-.project
-.settings/
-*.sublime-workspace
-
-# Operating System files
-Thumbs.db
-.DS_Store
+# Dependencies
+vendor/
+composer.lock
+node_modules/
+package-lock.json
+yarn.lock
 
 # Logs
+logs/*.log
+logs/*.log.*
+logs/*.gz
 *.log
-logs/
+error_log
+php_errors.log
 
-# Session files
-/sessions/
+# Backups
+backups/*.sql
+backups/*.sql.gz
+backups/*.zip
+*.backup
+*.bak
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Cache & Temporary
+cache/
+tmp/
+temp/
+*.cache
+.cache/
+sessions/
 *.sess
 
-# Temporary files
-*.tmp
-temp/
+# Database
+*.sql
+!sql/schema.sql
+*.db
+*.sqlite
+
+# IDE & Editors
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+*.swn
+*~
+.project
+.settings/
+.buildpath
+nbproject/
+
+# Operating System
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# PHP
+*.php~
+*.php_old
+*.phtml~
+
+# Test & Development
+test_*.php
+*_test.php
+debug*.php
+*_backup.php
+phpunit.xml
+.phpunit.result.cache
+
+# Build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+
+# Docker volumes
+docker/mysql/
+
+# Security
+*.key
+*.pem
+*.crt
+*.csr
+.htpasswd
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+.npm
+.eslintcache
+.stylelintcache
