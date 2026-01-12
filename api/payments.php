@@ -57,7 +57,7 @@ function getAllPayments() {
         $offset = max(0, intval($_GET['offset'] ?? 0));
         $status = $_GET['status'] ?? null;
         
-        $query = "SELECT p.*, a.application_number, a.customer_name, u.name as user_name
+        $query = "SELECT p.*, a.application_number, a.customer_name, u.username as user_name
                   FROM payments p
                   LEFT JOIN applications a ON p.application_id = a.id
                   LEFT JOIN users u ON p.user_id = u.id
@@ -122,7 +122,7 @@ function getPaymentsByApplication() {
         $database = new Database();
         $conn = $database->getConnection();
         
-        $query = "SELECT p.*, u.name as user_name
+        $query = "SELECT p.*, u.username as user_name
                   FROM payments p
                   LEFT JOIN users u ON p.user_id = u.id
                   WHERE p.application_id = :application_id

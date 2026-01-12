@@ -16,6 +16,15 @@ try {
     // Проверяем структуру таблицы users
     echo "<h3>Структура таблицы users:</h3>";
     $columns = $pdo->query("DESCRIBE users")->fetchAll();
+
+    // Hotfix: legacy DBs may have `name` instead of `username`
+    $fields = array_column($columns, 'Field');
+    if (!in_array('username', $fields, true) && in_array('name', $fields, true)) {
+        $pdo->exec("ALTER TABLE users CHANGE COLUMN name username VARCHAR(255) NOT NULL");
+        $columns = $pdo->query("DESCRIBE users")->fetchAll();
+        echo "<p style='color: green;'>✓ Колонка name переименована в username</p>";
+    }
+
     echo "<table border='1' cellpadding='5'>";
     echo "<tr><th>Поле</th><th>Тип</th><th>NULL</th><th>Ключ</th><th>По умолчанию</th></tr>";
     foreach ($columns as $col) {
