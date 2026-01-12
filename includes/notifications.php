@@ -41,7 +41,7 @@ if (!function_exists('notifyDriverAssignment')) {
 if (!function_exists('notifyDispatchersStatusChange')) {
     function notifyDispatchersStatusChange($pdo, $applicationNumber, $oldStatus, $newStatus, $companyId = null) {
         try {
-            $roles = ['admin', 'dispatcher', 'manager'];
+            $roles = ['admin', 'manager', 'client'];
             $placeholders = implode(',', array_fill(0, count($roles), '?'));
 
             $sql = "SELECT id FROM users WHERE role IN ($placeholders)";

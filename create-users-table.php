@@ -24,7 +24,7 @@ try {
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         full_name VARCHAR(255) NOT NULL,
-        role ENUM('admin', 'dispatcher', 'manager') DEFAULT 'dispatcher',
+        role ENUM('admin', 'manager', 'driver', 'client') DEFAULT 'client',
         is_active BOOLEAN DEFAULT TRUE,
         last_login TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

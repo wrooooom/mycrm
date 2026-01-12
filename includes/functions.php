@@ -19,9 +19,9 @@ if (!function_exists('isAdmin')) {
     }
 }
 
-if (!function_exists('isDispatcher')) {
-    function isDispatcher() {
-        return isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'dispatcher';
+if (!function_exists('isClient')) {
+    function isClient() {
+        return isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client';
     }
 }
 

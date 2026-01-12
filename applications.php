@@ -74,7 +74,7 @@ try {
     $statsQuery = "SELECT COUNT(*) as total FROM applications a WHERE 1=1";
     $statsParams = [];
     
-    if ($userContext['role'] === 'dispatcher' || $userContext['role'] === 'manager') {
+    if ($userContext['role'] === 'client' || $userContext['role'] === 'manager') {
         $statsQuery .= " AND (a.executor_company_id = :company_id OR a.executor_company_id IS NULL)";
         $statsParams[':company_id'] = $userContext['company_id'];
     } elseif ($userContext['role'] === 'driver') {
@@ -106,7 +106,7 @@ try {
     $params = [];
     
     // ACL фильтрация
-    if ($userContext['role'] === 'dispatcher' || $userContext['role'] === 'manager') {
+    if ($userContext['role'] === 'client' || $userContext['role'] === 'manager') {
         $whereClause .= " AND (a.executor_company_id = :company_id OR a.executor_company_id IS NULL)";
         $params[':company_id'] = $userContext['company_id'];
     } elseif ($userContext['role'] === 'driver') {
@@ -603,7 +603,7 @@ $pageTitle = "Управление заказами";
                                                                class="btn btn-outline-primary" title="Редактировать">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <?php if (in_array($_SESSION['user_role'], ['admin', 'dispatcher', 'manager'])): ?>
+                                                            <?php if (in_array($_SESSION['user_role'], ['admin', 'manager', 'client'])): ?>
                                                                 <button type="button" class="btn btn-outline-info" 
                                                                         onclick="quickAction('assignDriver', <?php echo $app['id']; ?>)" 
                                                                         title="Назначить водителя">
