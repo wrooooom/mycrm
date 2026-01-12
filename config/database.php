@@ -20,6 +20,21 @@ if (!file_exists($protected_path)) {
 define('PROTECTED_ACCESS', true);
 require_once $protected_path;
 
+if (!function_exists('ensureUsersUsernameColumn')) {
+    function ensureUsersUsernameColumn(PDO $pdo): void {
+        try {
+            $columns = $pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_ASSOC);
+            $fields = array_column($columns, 'Field');
+
+            if (!in_array('username', $fields, true) && in_array('name', $fields, true)) {
+                $pdo->exec("ALTER TABLE users CHANGE COLUMN name username VARCHAR(255) NOT NULL");
+            }
+        } catch (Exception $e) {
+            // ignore
+        }
+    }
+}
+
 // Database connection function
 function connectDatabase() {
     try {
@@ -33,6 +48,8 @@ function connectDatabase() {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+
+        ensureUsersUsernameColumn($pdo);
         
         return $pdo;
         

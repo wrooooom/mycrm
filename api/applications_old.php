@@ -64,7 +64,7 @@ function getAllApplications() {
                          v.license_plate as vehicle_plate,
                          c.name as customer_company_name,
                          ec.name as executor_company_name,
-                         u.name as creator_name
+                         u.username as creator_name
                   FROM applications a
                   LEFT JOIN drivers d ON a.driver_id = d.id
                   LEFT JOIN vehicles v ON a.vehicle_id = v.id

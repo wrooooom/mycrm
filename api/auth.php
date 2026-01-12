@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'success' => true,
                     'user' => [
                         'id' => $user['id'],
-                        'name' => $user['name'],
+                        'username' => $user['username'] ?? ($user['name'] ?? null),
                         'email' => $user['email'],
                         'role' => $user['role'],
                         'phone' => $user['phone'],

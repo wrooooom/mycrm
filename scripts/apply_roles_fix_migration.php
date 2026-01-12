@@ -21,7 +21,7 @@ function applyRolesMigration() {
         
         // Step 2: Update test data dispatcher user
         echo "Step 2: Updating test dispatcher user to manager...\n";
-        $stmt = $pdo->prepare("UPDATE users SET name = 'Менеджер Сидорова', email = 'manager2@proftransfer.ru' WHERE email = 'dispatcher@proftransfer.ru'");
+        $stmt = $pdo->prepare("UPDATE users SET username = 'manager2', email = 'manager2@proftransfer.ru' WHERE email = 'dispatcher@proftransfer.ru'");
         $stmt->execute();
         echo "Updated test dispatcher user to manager\n";
         
