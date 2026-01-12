@@ -35,6 +35,10 @@ backups/*.zip
 uploads/*
 !uploads/.gitkeep
 
+# Exports
+exports/*
+!exports/.gitkeep
+
 # Cache & Temporary
 cache/
 tmp/

@@ -5,6 +5,292 @@ All notable changes to CRM.PROFTRANSFER will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2024-01-15 - INTEGRATIONS & EXTENDED FUNCTIONALITY 🔌
+
+### Major Release - Enterprise Integration Platform
+
+This release transforms the system into an enterprise-ready platform with comprehensive third-party integrations, extended functionality, and production-ready external service support.
+
+### ✨ Added
+
+#### SMS Integration
+- **SMS Providers** - Support for SMS.ru (Russian) and Twilio (International)
+- **SMS Logging** - Complete delivery tracking in `sms_log` table
+- **API Endpoint** - `/api/sms.php` for sending SMS
+- **Delivery Status** - Real-time status tracking
+- **Balance Checking** - Provider balance monitoring
+- **Test Mode** - Safe testing without sending real SMS
+- **Cost Tracking** - SMS cost monitoring per message
+
+#### Email Integration
+- **SMTP Support** - Full SMTP email sending
+- **HTML Templates** - Rich HTML email templates
+- **Template System** - Reusable email templates in `templates/emails/`
+- **Email Logging** - Complete send history in `email_log` table
+- **API Endpoint** - `/api/email.php` for email operations
+- **Pre-built Templates**:
+  - User registration welcome
+  - Password reset
+  - Application assigned to driver
+  - Status change notifications (extensible)
+- **Attachment Support** - Send files via email
+- **Queue Support** - Async email processing capability
+
+#### Payment Gateway
+- **Yandex.Kassa** - Russian payment gateway integration
+- **Stripe** - International payment gateway integration
+- **Payment Links** - Generate secure payment URLs
+- **Webhook Support** - Automatic payment status updates
+- **HMAC Verification** - Secure webhook signature validation
+- **Refund Support** - Full and partial refunds
+- **Transaction Logging** - Complete payment history in `payment_transactions` table
+- **API Endpoint** - `/api/payment-gateway.php`
+- **Test Mode** - Safe payment testing
+
+#### Push Notifications
+- **FCM Integration** - Firebase Cloud Messaging support
+- **Multi-Device** - iOS, Android, and Web push notifications
+- **Device Management** - Token storage in `device_tokens` table
+- **Notification Logging** - Complete push history in `push_notification_log` table
+- **API Endpoint** - `/api/push-notifications.php`
+- **Auto Cleanup** - Automatic removal of invalid tokens
+- **Helper Methods** - Pre-built notification types
+
+#### Telegram Bot
+- **Bot Integration** - Full Telegram bot support
+- **Commands**:
+  - `/start` - Welcome and help
+  - `/status` - Active applications count
+  - `/today` - Today's applications
+  - `/drivers` - Driver status summary
+  - `/earnings` - Revenue statistics
+  - `/alerts` - Urgent notifications
+- **User Linking** - Connect Telegram users to CRM accounts
+- **Webhook Support** - Real-time message processing
+- **API Endpoint** - `/api/telegram-webhook.php`
+
+#### ERP/1C Integration
+- **Generic ERP Framework** - Flexible integration architecture
+- **Entity Sync** - Applications, companies, drivers, payments, vehicles
+- **Bidirectional Sync** - Push to and pull from ERP
+- **Sync Logging** - Complete sync history in `erp_sync_log` table
+- **API Endpoint** - `/api/erp-sync.php`
+- **Status Tracking** - Monitor sync success/failure
+- **Test Mode** - Safe integration testing
+
+#### GPS Tracking
+- **Location Storage** - GPS coordinates in `gps_tracking` table
+- **History Tracking** - Complete location history
+- **Auto Cleanup** - Configurable data retention (default 90 days)
+- **Real-time Updates** - Live location tracking
+- **Battery Monitoring** - Device battery level tracking
+- **Speed & Heading** - Additional telemetry data
+
+#### Export Service
+- **Multiple Formats** - CSV, Excel, PDF, JSON
+- **Export Types** - Applications, drivers, vehicles, payments
+- **Filtering** - Advanced filter support
+- **UTF-8 Support** - Proper encoding with BOM for CSV
+- **API Endpoint** - `/api/export.php`
+- **Job Tracking** - Async export tracking in `export_jobs` table
+
+#### Notification Queue
+- **Async Processing** - Background notification processing
+- **Priority Levels** - low, normal, high, urgent
+- **Retry Mechanism** - Automatic retry on failure
+- **Max Attempts** - Configurable retry limits
+- **Queue Table** - `notification_queue` for tracking
+
+#### Webhook Management
+- **Event Logging** - All webhooks logged in `webhook_events` table
+- **Signature Verification** - HMAC-SHA256 signature validation
+- **Processing Tracking** - Monitor webhook processing status
+- **Audit Trail** - Complete webhook history
+
+#### Integration Settings
+- **Database Config** - Store integration settings in database
+- **Enable/Disable** - Toggle integrations on/off
+- **Encrypted Storage** - Secure credential storage support
+- **Settings Table** - `integration_settings` for configuration
+
+### 📊 Database Schema
+
+#### New Tables (12 total)
+1. `sms_log` - SMS delivery tracking
+2. `email_log` - Email delivery tracking  
+3. `payment_transactions` - Enhanced payment tracking
+4. `device_tokens` - Push notification tokens
+5. `push_notification_log` - Push history
+6. `erp_sync_log` - ERP sync operations
+7. `notification_queue` - Async notification queue
+8. `telegram_users` - Telegram user mapping
+9. `export_jobs` - Export job tracking
+10. `webhook_events` - Webhook audit log
+11. `gps_tracking` - GPS location history
+12. `integration_settings` - Integration config
+
+### 📁 New Files
+
+#### Integration Classes (7)
+- `includes/integrations/SmsProvider.php`
+- `includes/integrations/EmailProvider.php`
+- `includes/integrations/PaymentGateway.php`
+- `includes/integrations/PushNotification.php`
+- `includes/integrations/ErpSync.php`
+- `includes/integrations/TelegramBot.php`
+- `includes/integrations/ExportService.php`
+
+#### API Endpoints (7)
+- `api/sms.php`
+- `api/email.php`
+- `api/payment-gateway.php`
+- `api/push-notifications.php`
+- `api/erp-sync.php`
+- `api/telegram-webhook.php`
+- `api/export.php`
+
+#### Templates (3+)
+- `templates/emails/user_registration.php`
+- `templates/emails/password_reset.php`
+- `templates/emails/application_assigned.php`
+
+#### SQL & Scripts
+- `sql/stage5_integrations.sql` - Database migration
+- `scripts/apply_stage5_migration.php` - Migration script
+
+#### Documentation
+- `INTEGRATIONS.md` - Comprehensive integration guide
+- `STAGE5_SUMMARY.md` - Stage 5 summary
+
+### 🔧 Configuration
+
+#### New Environment Variables (30+)
+```env
+# SMS
+SMS_PROVIDER, SMS_API_KEY, SMS_FROM_NUMBER, SMS_TEST_MODE
+TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
+
+# Email
+MAIL_TEST_MODE, MAIL_QUEUE_ENABLED
+
+# Payment
+PAYMENT_PROVIDER, PAYMENT_TEST_MODE
+YANDEX_KASSA_SHOP_ID, YANDEX_KASSA_API_KEY, YANDEX_KASSA_SECRET_KEY
+STRIPE_API_KEY, STRIPE_SECRET_KEY
+
+# Push Notifications
+FCM_API_KEY, FCM_SENDER_ID, FCM_TEST_MODE
+
+# Telegram
+TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TEST_MODE, TELEGRAM_WEBHOOK_ENABLED
+
+# ERP/1C
+ERP_TYPE, ERP_API_URL, ERP_API_KEY, ERP_TEST_MODE, ERP_AUTO_SYNC, ERP_SYNC_INTERVAL
+
+# GPS
+GPS_TRACKING_ENABLED, GPS_UPDATE_INTERVAL, GPS_STORE_HISTORY_DAYS
+
+# Export
+EXPORT_PATH, EXPORT_MAX_ROWS, EXPORT_TTL
+```
+
+### 🔒 Security
+
+- **Webhook Verification** - HMAC signature validation for all webhooks
+- **API Key Protection** - Secure storage and encryption support
+- **Rate Limiting** - All endpoints protected (Stage 4 feature)
+- **SQL Injection Prevention** - Prepared statements throughout
+- **XSS Protection** - Input sanitization for all integrations
+- **HTTPS Required** - All integrations require secure connections in production
+
+### ⚡ Performance
+
+- **Async Queue** - Background processing for notifications
+- **Test Mode** - No external API calls during development
+- **Efficient Queries** - Indexed tables for fast lookups
+- **Data Retention** - Automatic cleanup of old data
+- **Export Limits** - Configurable row limits to prevent memory issues
+
+### 📖 Documentation
+
+- **INTEGRATIONS.md** - 400+ line comprehensive guide
+  - Setup instructions for each integration
+  - Configuration examples
+  - API usage documentation
+  - Troubleshooting guide
+  - Best practices
+  - Security guidelines
+- **STAGE5_SUMMARY.md** - Complete feature summary
+
+### 🧪 Testing
+
+- **Test Mode Support** - All integrations support safe testing
+- **Mock Responses** - Test without external services
+- **Complete Logging** - All operations logged even in test mode
+- **Migration Script** - Automated database setup
+
+### 📈 Statistics
+
+- **7** new integration classes
+- **7** new API endpoints
+- **12** new database tables
+- **3+** email templates
+- **30+** new environment variables
+- **2** comprehensive documentation files
+- **100%** test mode coverage
+
+### 🎯 Use Cases
+
+#### SMS Notifications
+- Driver assignment notifications
+- Order status updates
+- Payment confirmations
+- Urgent alerts
+
+#### Email Communications
+- User registration
+- Password reset
+- Order confirmations
+- Weekly reports
+
+#### Payment Processing
+- Online payment links
+- Automatic status updates
+- Refund processing
+- Transaction tracking
+
+#### Push Notifications
+- Mobile app notifications
+- Real-time updates
+- Urgent messages
+- Status changes
+
+#### Telegram Bot
+- Manager dashboard
+- Quick statistics
+- Alerts and monitoring
+- Command-based interface
+
+#### ERP Integration
+- Data synchronization
+- Automated workflows
+- Multi-system consistency
+- Bidirectional updates
+
+#### GPS Tracking
+- Real-time driver locations
+- Route history
+- Performance monitoring
+- Fleet management
+
+#### Data Export
+- Report generation
+- Data analysis
+- Backup purposes
+- External tool integration
+
+---
+
 ## [4.0.0] - 2024-01-12 - PRODUCTION READY 🚀
 
 ### Major Release - Production-Ready Finalization
