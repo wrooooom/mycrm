@@ -1,12 +1,4 @@
 <?php
-require_once 'config.php';
-require_once 'auth.php';
-requireLogin(); // Требуем авторизацию
-
-// Для административных страниц (companies.php, analytics.php) используйте:
-// requireAdmin();
-?>
-<?php
 /**
  * Создание таблицы пользователей
  */
@@ -22,10 +14,11 @@ try {
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(100) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
-        password_hash VARCHAR(255) NOT NULL,
-        full_name VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        phone VARCHAR(20),
         role ENUM('admin', 'manager', 'driver', 'client') DEFAULT 'client',
-        is_active BOOLEAN DEFAULT TRUE,
+        company_id INT,
+        status ENUM('active', 'blocked') DEFAULT 'active',
         last_login TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -37,11 +30,11 @@ try {
     $admin_password = password_hash('admin123', PASSWORD_DEFAULT);
     
     $stmt = $pdo->prepare("
-        INSERT IGNORE INTO users (username, email, password_hash, full_name, role) 
-        VALUES (?, ?, ?, ?, ?)
+        INSERT IGNORE INTO users (username, email, password, phone, role, status) 
+        VALUES (?, ?, ?, ?, ?, ?)
     ");
     
-    $stmt->execute(['admin', 'admin@crmproftransfer.ru', $admin_password, 'Администратор', 'admin']);
+    $stmt->execute(['admin', 'admin@proftransfer.ru', $admin_password, '+79990000001', 'admin', 'active']);
     
     echo "<div style='padding: 20px; background: #e8f5e8; color: #388e3c; border-radius: 5px;'>
             ✅ Таблица пользователей создана успешно!<br>

@@ -18,7 +18,7 @@ try {
     ];
     
     // Здесь будет реальная статистика из БД
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM drivers WHERE is_active = 1");
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM drivers WHERE status = 'work'");
     $stats['total'] = $stmt->fetchColumn();
     
     // Для демонстрации используем фиктивные данные
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Получаем список водителей для таблицы
 try {
-    $drivers_query = "SELECT * FROM drivers WHERE is_active = 1 ORDER BY created_at DESC LIMIT 50";
+    $drivers_query = "SELECT * FROM drivers WHERE status = 'work' ORDER BY created_at DESC LIMIT 50";
     $drivers = $pdo->query($drivers_query)->fetchAll(PDO::FETCH_ASSOC);
 } catch(Exception $e) {
     $drivers = [];

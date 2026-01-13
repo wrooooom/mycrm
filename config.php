@@ -20,11 +20,12 @@ try {
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(100) NOT NULL UNIQUE,
             email VARCHAR(255) NOT NULL UNIQUE,
-            password_hash VARCHAR(255) NOT NULL,
             password VARCHAR(255) NOT NULL,
             full_name VARCHAR(255) NOT NULL,
+            phone VARCHAR(20),
             role ENUM('admin','manager','driver','client') DEFAULT 'client',
-            is_active TINYINT(1) DEFAULT 1,
+            company_id INT,
+            status ENUM('active','blocked') DEFAULT 'active',
             last_login TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -33,8 +34,8 @@ try {
 
         // Создаем администратора
         $hashedPassword = password_hash('admin123', PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, password, full_name, role) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute(['admin', 'admin@example.com', $hashedPassword, $hashedPassword, 'Главный администратор', 'admin']);
+        $stmt = $pdo->prepare("INSERT INTO users (username, email, password, full_name, phone, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute(['admin', 'admin@example.com', $hashedPassword, 'Главный администратор', '+79990000001', 'admin', 'active']);
     }
 
     // Hotfix: legacy DBs may have `name` instead of `username`
