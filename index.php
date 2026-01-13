@@ -21,10 +21,10 @@ try {
     $stats = [
         'total_applications' => $pdo->query("SELECT COUNT(*) FROM applications")->fetchColumn(),
         'new_applications' => $pdo->query("SELECT COUNT(*) FROM applications WHERE status = 'new'")->fetchColumn(),
-        'total_drivers' => $pdo->query("SELECT COUNT(*) FROM drivers WHERE is_active = 1")->fetchColumn(),
-        'active_drivers' => $pdo->query("SELECT COUNT(*) FROM drivers WHERE status = 'active'")->fetchColumn(),
-        'total_vehicles' => $pdo->query("SELECT COUNT(*) FROM vehicles WHERE is_active = 1")->fetchColumn(),
-        'available_vehicles' => $pdo->query("SELECT COUNT(*) FROM vehicles WHERE status = 'available'")->fetchColumn(),
+        'total_drivers' => $pdo->query("SELECT COUNT(*) FROM drivers WHERE status = 'work'")->fetchColumn(),
+        'active_drivers' => $pdo->query("SELECT COUNT(*) FROM drivers WHERE status = 'work'")->fetchColumn(),
+        'total_vehicles' => $pdo->query("SELECT COUNT(*) FROM vehicles WHERE status = 'working'")->fetchColumn(),
+        'available_vehicles' => $pdo->query("SELECT COUNT(*) FROM vehicles WHERE status = 'working'")->fetchColumn(),
     ];
 } catch(Exception $e) {
     $stats = [
