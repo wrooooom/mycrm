@@ -36,13 +36,13 @@ try {
     
     // Получаем доступный транспорт
     $vehicles = $pdo->query("
-        SELECT v.* 
-        FROM vehicles v 
-        WHERE v.status = 'active' 
-        AND v.id NOT IN (
-            SELECT vehicle_id FROM driver_vehicles WHERE is_active = 1
-        )
-        ORDER BY v.model
+       SELECT v.*
+       FROM vehicles v
+       WHERE v.status = 'working'
+       AND v.id NOT IN (
+           SELECT vehicle_id FROM driver_vehicles WHERE is_active = 1
+       )
+       ORDER BY v.model
     ")->fetchAll();
     
     // Получаем текущий закрепленный транспорт

@@ -17,17 +17,17 @@ try {
     $tables = $pdo->query("SHOW TABLES LIKE 'users'")->fetchAll();
     if (count($tables) == 0) {
         $createUsers = "CREATE TABLE users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(100) NOT NULL UNIQUE,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            password_hash VARCHAR(255) NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            full_name VARCHAR(255) NOT NULL,
-            role ENUM('admin','manager','driver','client') DEFAULT 'client',
-            is_active TINYINT(1) DEFAULT 1,
-            last_login TIMESTAMP NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+           id INT AUTO_INCREMENT PRIMARY KEY,
+           username VARCHAR(100) NOT NULL UNIQUE,
+           email VARCHAR(255) NOT NULL UNIQUE,
+           password_hash VARCHAR(255) NOT NULL,
+           password VARCHAR(255) NOT NULL,
+           full_name VARCHAR(255) NOT NULL,
+           role ENUM('admin','manager','driver','client') DEFAULT 'client',
+           status ENUM('active', 'blocked') DEFAULT 'active',
+           last_login TIMESTAMP NULL,
+           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )";
         $pdo->exec($createUsers);
 
