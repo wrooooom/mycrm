@@ -16,10 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (!empty($username) && !empty($password)) {
         try {
-            // Ищем пользователя в БД - проверяем оба поля: password и password_hash
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND is_active = 1");
-            $stmt->execute([$username]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+           // Ищем пользователя в БД - проверяем оба поля: password и password_hash
+           $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND status = 'active'");
+           $stmt->execute([$username]);
+           $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($user) {
                 // Пробуем проверить пароль в поле password (новое)
